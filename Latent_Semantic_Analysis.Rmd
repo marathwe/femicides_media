@@ -1,0 +1,252 @@
+---
+title: "Researchpaper"
+output:
+  html_document:
+    df_print: page3
+date: "2023-03-31"
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# In Class Exercise 2: Corpus Construction and Pre-Processing
+
+Name: Mara Weber
+Matrikelnr. 4477839
+Seminar: Introduction to Text Mining 
+
+### Loading necessary Packages
+```{r Packages, message=FALSE, warning=FALSE}
+pacman::p_load("quanteda", "quanteda.textmodels", "tidyverse", "quanteda.textstats",  "quanteda.textplots", "tm", "SnowballC", "readr", "openxlsx", "topicmodels", "lsa", "LSAfun", dependencies = TRUE, "ldatuning", "wordcloud", "tidytext", "quanteda.textmodels", "rgl", "tm", "lsafun", "openNLP", "qdap", "openNLPmodels.en", "spaCy", "NLP", "tagger", "rJava")
+```
+
+### Importing the data
+```{r Import Data}
+df <- read.csv("/Users/maraweber/Desktop/Text Mining/Research Paper/CNN_Articels_clean.csv")
+
+# Creating a subset of all needed Variables
+
+df_temp <- df %>%
+  select("Index", "Headline", "Description", "Category", "Article.text") %>%
+  rename("text" = "Article.text") %>% 
+  filter(Category == "news")
+```
+
+* Keyword selection and creating a file which allows to work on them manually
+```{r Keywords}
+df_temp$femicide <- ifelse(str_detect(df_temp$text, regex("murder|femicide|killing|intimate partner violence|domestic abuse|familiy tradegy|suicide|killed|homicide", ignore_case = T)), "femicide", "other")
+table(df_temp$femicide)
+df_fem <- df_temp[df_temp$femicide == 'femicide', ]
+
+#View(df_fem)
+#write.csv(df_fem, "df_fem.csv")
+#write.xlsx(df_fem, "df_fem.xlsx")
+```
+
+* Creating another Dataset just for homicides
+
+```{r}
+df_temp$homicide <- ifelse(str_detect(df_temp$text, regex("homicide|men killed men|men stabbed men|shoot", ignore_case = T)), "homicide", "other")
+table(df_temp$homicide)
+df_hom <- df_temp[df_temp$homicide == 'homicide', ]
+#write.csv(df_fem, "df_fem.csv")
+write.xlsx(df_hom, "df_hom.xlsx")
+```
+
+* Pick only rows which been selected as relevant
+```{r Selection of observations}
+df_fem_s <- read.xlsx("/Users/maraweber/Desktop/Text Mining/Research Paper/df_fem_selected.xlsx")
+df_fem_s <- df_fem_s[df_fem_s$relevant == 1, ]
+```
+
+* Picking only relevant articles
+```{r}
+df_hom_s <- read.xlsx("/Users/maraweber/Desktop/Text Mining/Research Paper/df_hom_selected.xlsx")
+df_hom_s <- df_hom_s[df_hom_s$relevant == 1, ]
+```
+
+
+#### Cleaning of the Text 
+
+* Deleting odd characters
+
+```{r}
+df_fem_s <- df_fem_s %>% mutate(text = str_remove(df_fem_s$text, "\\\\"))
+df_fem_s <- df_fem_s %>% mutate(text = str_remove(df_fem_s$text, "\\\n"))
+df_fem_s <- df_fem_s %>% mutate(text = str_remove(df_fem_s$text, "\\\r"))
+df_fem_s <- df_fem_s %>% mutate(text = str_remove(df_fem_s$text, "--"))
+
+
+df_hom_s <- df_hom_s %>% mutate(text = str_remove(df_hom_s$text, "\\\\"))
+df_hom_s <- df_hom_s %>% mutate(text = str_remove(df_hom_s$text, "\\\n"))
+df_hom_s <- df_hom_s %>% mutate(text = str_remove(df_hom_s$text, "\\\r"))
+df_hom_s <- df_hom_s %>% mutate(text = str_remove(df_hom_s$text, "--"))
+
+```
+
+* Bigrams
+```{r Concate relevant words}
+gsub("intimatepartner violence","intimatepartnerviolence", df_fem_s, ignore.case = TRUE)
+gsub("gender-based killing", "genderbasedkilling", df_fem_s, ignore.case = TRUE)
+gsub("gender-based violence", "genderbasedviolence", df_fem_s, ignore.case = TRUE)
+gsub("sex worker", "sexworker", df_fem_s, ignore.case = TRUE)
+gsub("domestic violence", "domesticviolence", df_fem_s, ignore.case = TRUE)
+gsub("domestic abuse", "domesticabuse", df_fem_s, ignore.case =TRUE)
+gsub("familiy tradegy", "familiytradegy", df_fem_s, ignore.case =TRUE)
+gsub("serial killer", "serialkiller", df_fem_s, ignore.case =TRUE)
+gsub("Sarah Everard", "SarahEverard", df_fem_s, ignore.case =TRUE)
+gsub("Black Lives Matter", "BlackLivesMatter", df_fem_s, ignore.case =TRUE)
+gsub("arranged marriage", "arrangedmarriage", df_fem_s, ignore.case =TRUE)
+gsub("Wayne Couzens","WayneCouzens", df_fem_s, ignore.case = TRUE)
+gsub("sexual assault","sexualassault", df_fem_s, ignore.case = TRUE)
+gsub("police officer","policeofficer", df_fem_s, ignore.case = TRUE)
+gsub("Prime Minister","primeminister", df_fem_s, ignore.case = TRUE)
+gsub("people of color","peopleofcolor", df_fem_s, ignore.case = TRUE)
+gsub("Sabina Nessa","SabinaNessa", df_fem_s, ignore.case = TRUE)
+gsub("Femicide Census","FemicideCensus", df_fem_s, ignore.case = TRUE)
+gsub("London's Metropolitan Police","LondonsMetropolitanPolice", df_fem_s, ignore.case = TRUE)
+gsub("Istanbul Convention","IstanbulConvention", df_fem_s, ignore.case = TRUE)
+gsub("Human Rights","humanrights", df_fem_s, ignore.case = TRUE)
+gsub("sexual violence","sexualviolence", df_fem_s, ignore.case = TRUE)
+gsub("United States","UnitedStates", df_fem_s, ignore.case = TRUE)
+gsub("European Union","EuropeanUnion", df_fem_s, ignore.case = TRUE)
+gsub("United Nations","UnitedNations", df_fem_s, ignore.case = TRUE)
+gsub("family violence","familyviolence", df_fem_s, ignore.case = TRUE)
+
+
+gsub("al Qaeda","alQaeda", df_hom_s, ignore.case = TRUE)
+gsub("anti-Semitism","antisemitism", df_hom_s, ignore.case = TRUE)
+gsub("United States","UnitedStates", df_hom_s, ignore.case = TRUE)
+gsub("European Union","EuropeanUnion", df_hom_s, ignore.case = TRUE)
+gsub("United Nations","UnitedNations", df_hom_s, ignore.case = TRUE)
+gsub("Alexey Navalny","AlexeyNavalny", df_hom_s, ignore.case = TRUE)
+gsub("school shooting","schoolshooting", df_hom_s, ignore.case = TRUE)
+gsub("police officer","policeofficer", df_hom_s, ignore.case = TRUE)
+gsub("Prime Minister","primeminister", df_hom_s, ignore.case = TRUE)
+gsub("people of color","peopleofcolor", df_hom_s, ignore.case = TRUE)
+```
+
+* Corpus Construction
+```{r Corpus Construction}
+#corpus_fem <- corpus(df_fem_s, text_field = "text")
+corpus_fem <- corpus(df_fem_s$text, docvars = data.frame(df_fem_s))
+#corpus_hom <- corpus(df_hom_s, text_field = "text")
+corpus_hom <- corpus(df_hom_s$text, docvars = data.frame(df_hom_s))
+
+```
+
+* Tokenization and Noungroups with SpacyR
+```{r Tokenization}
+#install.packages("spacyr")
+#library(spacyr)
+#spacy_install(python_version="3.9")
+#spacy_initialize()
+
+tokens_fem = spacy_parse(corpus_fem, nounphrase = T)
+#nps_fem = nounphrase_extract(tokens_fem)
+tokens_fem = tokens_fem %>%
+  as.tokens()
+
+tokens_hom = spacy_parse(corpus_hom, nounphrase = T)
+#nps_hom = nounphrase_extract(tokens_hom)
+tokens_hom = tokens_hom %>%
+  as.tokens()
+
+#spacy_finalize()
+```
+
+* Cleaning the Tokes with stopword removal, punctuations, symbols and stemming
+
+```{r Cleaning Tokens}
+clean_tokens_fem <- tokens(corpus_fem,
+              remove_symbols = TRUE, 
+              remove_numbers = TRUE, 
+              remove_url = TRUE,
+              remove_separators = TRUE, 
+              remove_punct = TRUE,
+              remove_hyphens = TRUE) 
+tokens_tolower(clean_tokens_fem) 
+clean_tokens_fem <- tokens_remove(clean_tokens_fem, c(stopwords("en"), "said", "cnn", "also", "will", "one", "according", "says", "told", "like", "on", "was", "can", "many", "never", "made", "go", "take", "even", "just","peopl", "say", "case", "two", "us", "day", "get", "first", "three", "report", "know", "live", "new", "life", "back", "call", "time", "last", "around", "right", "another", "still", "now", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "way", "march", "later", "since", "come", "report", "went", "may", "make", "took", "people", "live", "believe", "met", "little", "across", "ask", "think", "want", "go", "five", "see", "left","want"))
+tokens_wordstem(clean_tokens_fem)
+
+clean_tokens_hom <- tokens(corpus_hom,
+              remove_symbols = TRUE, 
+              remove_numbers = TRUE, 
+              remove_url = TRUE,
+              remove_separators = TRUE, 
+              remove_punct = TRUE,
+              remove_hyphens = TRUE)
+tokens_tolower(clean_tokens_hom) 
+clean_tokens_hom <- tokens_remove(clean_tokens_hom, c(stopwords("en"), 
+                                                      "said", "cnn", "also", "will", "one", "according", "says", "told", "like", "on", "was", "can", "many", "never", "made", "go", "take", "even", "just", "peopl", "say", "time", "case", "two", "us", "day", "get", "want", "first", "three", "report", "know", "live", "new", "life", "back", "call", "last", "time", "around", "right", "another", "still", "now", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "way", "march", "later", "since", "world", "come", "report", "went", "may", "make", "took", "people", "live", "believe", "met", "little", "across", "ask", "think", "want", "go", "five", "see", "left", "want"))
+clean_tokens_hom <- tokens_wordstem(clean_tokens_hom)
+```
+
+* Document-Term-Matrix and pruning
+```{r Document-Term-Matrix}
+df_mat_fem = dfm(clean_tokens_fem)%>%
+  dfm_trim(min_termfreq = 15) %>%
+  dfm_trim(max_termfreq = 250)
+
+df_mat_hom = dfm(clean_tokens_hom)%>%
+  dfm_trim(min_termfreq = 15) %>%
+  dfm_trim(max_termfreq = 250)
+```
+
+* Graphik helps to identify irrelevant words
+```{r Graphik Relevant Words}
+df_mat_fem %>% 
+  textstat_frequency(n = 30) %>%  
+  ggplot(aes(x = reorder(feature, frequency), y = frequency)) +
+  geom_point() + 
+  coord_flip() + 
+  labs(x = NULL, y = "Frequency") + # 
+  theme_minimal()
+```
+
+```{r}
+df_mat_hom %>% 
+  textstat_frequency(n = 30) %>%  
+  ggplot(aes(x = reorder(feature, frequency), y = frequency)) +
+  geom_point() + 
+  coord_flip() + 
+  labs(x = NULL, y = "Frequency") + # 
+  theme_minimal()
+```
+
+```{r Word Cloud, eval=FALSE, include=FALSE}
+df_mat_fem %>% 
+  textplot_wordcloud(max_words = 40) 
+```
+
+```{r eval=FALSE, include=FALSE}
+df_mat_hom %>% 
+  textplot_wordcloud(max_words = 40) 
+```
+
+* Running LSA and creating tables for factorsloading per document and term
+```{r LSA}
+fem <- convert(df_mat_fem, to = "lsa") # converting the quanteda document-term-matrix into one which can be read by the lsa package
+fem_weight <- lw_logtf(fem)*gw_idf(fem) #weighting
+lsa_fem_2 <- lsa(fem_weight, dims= 5) #lsa 
+results_fem_2 = as.data.frame(lsa_fem_2$dk) #factor loadings per document
+results_fem_terms_2 = as.data.frame(lsa_fem_2$tk) #relevant terms
+
+
+write.xlsx(results_fem_2, "results_fem_f_f.xlsx") #exporting table
+write.xlsx(results_fem_terms, "results_fem_2_term.xlsx") #writing file
+
+hom <- convert(df_mat_hom, to = "lsa")
+hom_weight <- lw_logtf(hom)*gw_idf(hom)
+lsa_hom <- lsa(hom_weight, dims = 5)
+results_hom = as.data.frame(lsa_hom$dk)
+results_hom = results_hom[order(-results_hom[,1]),]
+
+results_hom_terms = as.data.frame(lsa_hom$tk)
+results_hom_terms = results_hom_terms[order(-results_hom_terms[,1]),]
+
+write.xlsx(results_hom, "results_hom_2.xlsx")
+write.xlsx(results_hom_terms, "results_hom_2_terms.xlsx")
+```
+
+
