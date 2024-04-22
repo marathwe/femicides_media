@@ -1,5 +1,5 @@
 ---
-title: "Researchpaper"
+title: "Research paper"
 output:
   html_document:
     df_print: page3
@@ -9,12 +9,6 @@ date: "2023-03-31"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# In Class Exercise 2: Corpus Construction and Pre-Processing
-
-Name: Mara Weber
-Matrikelnr. 4477839
-Seminar: Introduction to Text Mining 
-
 ### Loading necessary Packages
 ```{r Packages, message=FALSE, warning=FALSE}
 pacman::p_load("quanteda", "quanteda.textmodels", "tidyverse", "quanteda.textstats",  "quanteda.textplots", "tm", "SnowballC", "readr", "openxlsx", "topicmodels", "lsa", "LSAfun", dependencies = TRUE, "ldatuning", "wordcloud", "tidytext", "quanteda.textmodels", "rgl", "tm", "lsafun", "openNLP", "qdap", "openNLPmodels.en", "spaCy", "NLP", "tagger", "rJava")
@@ -22,7 +16,7 @@ pacman::p_load("quanteda", "quanteda.textmodels", "tidyverse", "quanteda.textsta
 
 ### Importing the data
 ```{r Import Data}
-df <- read.csv("/Users/maraweber/Desktop/Text Mining/Research Paper/CNN_Articels_clean.csv")
+df <- read.csv("CNN_Articels_clean.csv")
 
 # Creating a subset of all needed Variables
 
@@ -55,13 +49,13 @@ write.xlsx(df_hom, "df_hom.xlsx")
 
 * Pick only rows which been selected as relevant
 ```{r Selection of observations}
-df_fem_s <- read.xlsx("/Users/maraweber/Desktop/Text Mining/Research Paper/df_fem_selected.xlsx")
+df_fem_s <- read.xlsx("df_fem_selected.xlsx")
 df_fem_s <- df_fem_s[df_fem_s$relevant == 1, ]
 ```
 
 * Picking only relevant articles
 ```{r}
-df_hom_s <- read.xlsx("/Users/maraweber/Desktop/Text Mining/Research Paper/df_hom_selected.xlsx")
+df_hom_s <- read.xlsx("df_hom_selected.xlsx")
 df_hom_s <- df_hom_s[df_hom_s$relevant == 1, ]
 ```
 
